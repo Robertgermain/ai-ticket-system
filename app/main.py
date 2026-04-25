@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from app.api.routes import tickets
+from app.db.database import engine
+from app.models.ticket import TicketModel
+
+TicketModel.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
