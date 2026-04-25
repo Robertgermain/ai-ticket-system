@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
-
 from app.schemas.ticket import TicketCreate, Ticket
 from app.services import ticket_service
 from app.db.deps import get_db

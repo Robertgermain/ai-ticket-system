@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 from app.api.routes import tickets
-from app.db.database import engine
-from app.models.ticket import TicketModel
+from app.db.database import engine, Base
+from app.models import ticket, user
+from app.api.routes import auth
 
-TicketModel.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -14,3 +15,4 @@ async def root():
 
 
 app.include_router(tickets.router)
+app.include_router(auth.router)
