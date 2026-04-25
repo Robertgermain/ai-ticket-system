@@ -8,24 +8,32 @@ from dotenv import load_dotenv
 from app.db.database import Base
 from app.models import user, ticket
 
+# Load environment variables
 load_dotenv()
-
 
 config = context.config
 
-
+# Get DATABASE_URL from .env
 DATABASE_URL = os.getenv("DATABASE_URL")
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
+# Fail fast if missing
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL is not set. Check your .env file.")
+
+# Alembic requires a string here
+config.set_main_option("sqlalchemy.url", str(DATABASE_URL))
+
+# Logging setup
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-
+# Metadata for autogenerate
 target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
+
     url = config.get_main_option("sqlalchemy.url")
 
     context.configure(

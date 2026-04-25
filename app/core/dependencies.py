@@ -4,7 +4,7 @@ from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 
 from app.db.deps import get_db
-from app.models.user import User
+from app.models.user import UserModel
 from app.core.config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -32,7 +32,7 @@ def get_current_user(
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = db.query(User).filter(User.id == int(user_id)).first()
+    user = db.query(UserModel).filter(UserModel.id == int(user_id)).first()
 
     if user is None:
         raise credentials_exception
@@ -40,7 +40,7 @@ def get_current_user(
     return user
 
 
-def get_current_admin_user(current_user: User = Depends(get_current_user)):
+def get_current_admin_user(current_user: UserModel = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

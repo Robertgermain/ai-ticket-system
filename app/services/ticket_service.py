@@ -1,45 +1,44 @@
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
 
 from app.models.ticket import TicketModel
-from app.schemas.ticket import TicketCreate
-from app.models.user import User
+from app.schemas.ticket import TicketCreate, TicketUpdate
+from app.models.user import UserModel
 
 
-def get_tickets(db: Session, user: User):
-    if user.role == "admin":
-        return db.query(TicketModel).order_by(TicketModel.id).all()
-    return (
+def get_tickets(db: Session, user: UserModel):
+    query = db.query(TicketModel).filter(TicketModel.is_deleted == False)
+
+    if user.role != "admin":
+        query = query.filter(TicketModel.owner_id == user.id)
+
+    return query.order_by(TicketModel.id).all()
+
+
+def get_ticket_by_id(db: Session, ticket_id: int, user: UserModel):
+    ticket = (
         db.query(TicketModel)
-        .filter(TicketModel.owner_id == user.id)
-        .order_by(TicketModel.id)
-        .all()
+        .filter(
+            TicketModel.id == ticket_id,
+            TicketModel.is_deleted == False,
+        )
+        .first()
     )
 
-
-def get_ticket_by_id(db: Session, ticket_id: int, user: User):
-    ticket = db.query(TicketModel).filter(TicketModel.id == ticket_id).first()
-
     if not ticket:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Ticket not found",
-        )
+        return None
+
     if user.role != "admin" and ticket.owner_id != user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to view this ticket",
-        )
+        return "unauthorized"
+
     return ticket
 
 
-def create_ticket(db: Session, ticket: TicketCreate, user: User):
+def create_ticket(db: Session, ticket: TicketCreate, user: UserModel):
     new_ticket = TicketModel(
-        title=ticket.title,
-        description=ticket.description,
-        status="open",
-        owner_id=user.id,  # ✅ FIXED
+        **ticket.model_dump(),
+        owner_id=user.id,
     )
+
     db.add(new_ticket)
     db.commit()
     db.refresh(new_ticket)
@@ -49,41 +48,52 @@ def create_ticket(db: Session, ticket: TicketCreate, user: User):
 def update_ticket(
     db: Session,
     ticket_id: int,
-    updated_ticket: TicketCreate,
-    user: User,
+    updated_ticket: TicketUpdate,
+    user: UserModel,
 ):
-    ticket = db.query(TicketModel).filter(TicketModel.id == ticket_id).first()
+    ticket = (
+        db.query(TicketModel)
+        .filter(
+            TicketModel.id == ticket_id,
+            TicketModel.is_deleted == False,
+        )
+        .first()
+    )
+
     if not ticket:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Ticket not found",
-        )
+        return None
+
     if user.role != "admin" and ticket.owner_id != user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to update this ticket",
-        )
-    ticket.title = updated_ticket.title
-    ticket.description = updated_ticket.description
+        return "unauthorized"
+
+    update_data = updated_ticket.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(ticket, key, value)
 
     db.commit()
     db.refresh(ticket)
     return ticket
 
 
-def delete_ticket(db: Session, ticket_id: int, user: User):
-    ticket = db.query(TicketModel).filter(TicketModel.id == ticket_id).first()
+def delete_ticket(db: Session, ticket_id: int, user: UserModel):
+    ticket = (
+        db.query(TicketModel)
+        .filter(
+            TicketModel.id == ticket_id,
+            TicketModel.is_deleted == False,
+        )
+        .first()
+    )
 
     if not ticket:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Ticket not found",
-        )
-    if user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can delete tickets",
-        )
-    db.delete(ticket)
+        return None
+
+    if user.role != "admin" and ticket.owner_id != user.id:
+        return "unauthorized"
+
+    ticket.is_deleted = True
+
     db.commit()
-    return
+    db.refresh(ticket)
+    return ticket

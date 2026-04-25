@@ -23,7 +23,14 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
             detail="Email already registered",
         )
 
-    return user_service.create_user(db, user.email, user.password)
+    return user_service.create_user(
+        db,
+        user.email,
+        user.password,
+        role="user",
+        first_name=user.first_name,
+        last_name=user.last_name,
+    )
 
 
 @router.post(
@@ -42,6 +49,12 @@ def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not db_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is inactive",
         )
 
     token = create_access_token(
