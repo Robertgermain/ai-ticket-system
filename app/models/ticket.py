@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship
 from app.db.database import Base
 
 
@@ -9,3 +10,6 @@ class TicketModel(Base):
     title = Column(String, index=True)
     description = Column(String)
     status = Column(String, default="open")
+
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    owner = relationship("User")
