@@ -29,6 +29,9 @@ def get_all_users(
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
 ):
+    """Retrieve all users (admin-only) with optional filtering and pagination."""
+
+    # Enforce admin-only access
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not authorized")
 
@@ -50,6 +53,7 @@ def get_all_users(
 def get_current_user_profile(
     current_user: UserModel = Depends(get_current_user),
 ):
+    """Return the currently authenticated user's profile."""
     return current_user
 
 
@@ -64,6 +68,12 @@ def update_current_user(
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
 ):
+    """
+    Update the current user's profile.
+
+    Users are limited to updating their own non-sensitive fields
+    (e.g., first name and last name).
+    """
     return user_service.update_user(
         db,
         current_user.id,
@@ -78,6 +88,7 @@ def get_user_by_id(
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
 ):
+    """Retrieve a user by ID with access control enforced."""
     return user_service.get_user_by_id(db, user_id, current_user)
 
 
@@ -88,6 +99,11 @@ def update_role(
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
 ):
+    """
+    Update a user's role (admin-only).
+
+    Role changes are restricted to admins and cannot be self-applied.
+    """
     return user_service.update_user_role(
         db,
         user_id,
@@ -103,6 +119,13 @@ def update_user(
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
 ):
+    """
+    Update a user (self or admin).
+
+    - Users can update their own profile
+    - Admins can update any user
+    - Sensitive fields (e.g., role) are handled separately
+    """
     return user_service.update_user(
         db,
         user_id,
@@ -117,6 +140,7 @@ def delete_user(
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
 ):
+    """Deactivate (soft delete) a user account. Admin privileges required."""
     user_service.delete_user(db, user_id, current_user)
     return
 
@@ -127,6 +151,9 @@ def create_user(
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
 ):
+    """Create a new user (admin-only)."""
+
+    # Enforce admin-only creation
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not authorized")
 

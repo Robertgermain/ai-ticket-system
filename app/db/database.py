@@ -3,20 +3,17 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Load environment variables from .env
-
+# Load environment variables
 load_dotenv()
 
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
+# Use a single source of truth for DB connection
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-
+# SQLAlchemy engine (handles DB connections)
 engine = create_engine(DATABASE_URL)
 
+# Session factory for DB operations
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
+# Base class for all ORM models
 Base = declarative_base()

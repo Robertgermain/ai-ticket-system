@@ -32,6 +32,7 @@ async def get_tickets(
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
 ):
+    """Retrieve tickets with optional filtering and pagination."""
     return ticket_service.get_tickets(db, current_user, limit, offset, status, priority)
 
 
@@ -41,6 +42,7 @@ async def get_ticket_by_id(
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
 ):
+    """Retrieve a single ticket by ID with access control enforced."""
     return ticket_service.get_ticket_by_id(db, ticket_id, current_user)
 
 
@@ -54,6 +56,7 @@ async def create_ticket(
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
 ):
+    """Create a new ticket. AI enrichment is handled in the service layer."""
     return ticket_service.create_ticket(db, ticket, current_user)
 
 
@@ -69,6 +72,12 @@ async def update_ticket_user(
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
 ):
+    """
+    Partially update a ticket (user-level).
+
+    Users are restricted to modifying only their own ticket's
+    title and description.
+    """
     return ticket_service.update_ticket_user(
         db, ticket_id, updated_ticket, current_user
     )
@@ -86,7 +95,14 @@ async def update_ticket_admin(
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
 ):
+    """
+    Fully update a ticket (admin-level).
 
+    Admins can modify all fields including status, priority,
+    categorization, and ticket type.
+    """
+
+    # Enforce admin-only access at the route layer for clarity and defense-in-depth
     if current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -105,5 +121,6 @@ async def delete_ticket(
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
 ):
+    """Soft delete a ticket. Ownership or admin privileges are enforced in the service layer."""
     ticket_service.delete_ticket(db, ticket_id, current_user)
     return

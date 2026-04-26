@@ -2,9 +2,10 @@ from fastapi import FastAPI
 import logging
 
 from app.api.routes import tickets, auth, users
-from app.db.database import engine, Base
-from app.models import ticket, user
+from app.db.database import engine, Base  # Required for model imports
+from app.models import ticket, user  # Ensures models are registered with SQLAlchemy
 
+# Configure global logging for the application
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -19,9 +20,13 @@ app = FastAPI(
 
 @app.get("/", tags=["Health Check"])
 async def root():
+    """
+    Health check endpoint to verify the API is running.
+    """
     return {"message": "AI Ticket Processing System is running"}
 
 
+# Register API route modules
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(tickets.router)

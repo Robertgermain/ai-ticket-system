@@ -18,12 +18,15 @@ router = APIRouter(
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Register a new user",
-    description="Creates a new user account with email, password, and basic profile information.",
+    description="Create a new user account with email, password, and profile information.",
 )
 def register(
     user: UserCreate,
     db: Session = Depends(get_db),
 ):
+    """Register a new user if the email is not already in use."""
+
+    # Ensure email uniqueness before creating the account
     existing_user = user_service.get_user_by_email(db, user.email)
 
     if existing_user:
@@ -32,6 +35,7 @@ def register(
             detail="Email already registered",
         )
 
+    # Create user with default role 'user'
     return user_service.create_user(
         db,
         user.email,
@@ -47,17 +51,18 @@ def register(
     response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
     summary="Authenticate user and return access token",
-    description=(
-        "Authenticates a user using email and password. "
-        "Returns a JWT access token for authorized API access."
-    ),
+    description="Validate user credentials and return a JWT access token.",
 )
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
+    """Authenticate user credentials and issue a JWT access token."""
+
+    # OAuth2 uses "username" field for email
     db_user = user_service.get_user_by_email(db, form_data.username)
 
+    # Validate credentials (user exists and password matches)
     if not db_user or not verify_password(form_data.password, db_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -65,12 +70,14 @@ def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Block login for inactive accounts
     if not db_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is inactive",
         )
 
+    # Generate JWT with user identity and role for downstream authorization
     token = create_access_token(
         {
             "sub": str(db_user.id),

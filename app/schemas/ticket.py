@@ -4,6 +4,8 @@ from datetime import datetime
 
 
 class TicketCreate(BaseModel):
+    """Schema for creating a new ticket (user input)."""
+
     title: str = Field(
         ...,
         min_length=3,
@@ -18,6 +20,8 @@ class TicketCreate(BaseModel):
 
 
 class TicketUserUpdate(BaseModel):
+    """Schema for user-level updates (limited to editable fields)."""
+
     title: Optional[str] = Field(
         default=None,
         min_length=3,
@@ -32,6 +36,8 @@ class TicketUserUpdate(BaseModel):
 
 
 class TicketBase(BaseModel):
+    """Shared ticket classification fields (primarily AI/system-managed)."""
+
     priority: Literal["low", "medium", "high"] = Field(
         default="medium",
         description="Priority level of the ticket",
@@ -64,6 +70,8 @@ class TicketBase(BaseModel):
 
 
 class TicketUpdate(BaseModel):
+    """Schema for admin-level updates (full control over ticket fields)."""
+
     title: Optional[str] = Field(
         default=None,
         min_length=3,
@@ -108,10 +116,13 @@ class TicketUpdate(BaseModel):
 
 
 class Ticket(BaseModel):
+    """Response schema representing a full ticket object returned by the API."""
+
     id: int = Field(..., description="Unique ticket ID")
     title: str = Field(..., description="Ticket title")
     description: str = Field(..., description="Ticket description")
 
+    # AI-enriched fields
     summary: Optional[str] = Field(
         None,
         description="AI-generated summary of the ticket",
@@ -142,6 +153,7 @@ class Ticket(BaseModel):
         description="Type of ticket",
     )
 
+    # Ownership + audit fields
     owner_id: int = Field(..., description="ID of the user who owns the ticket")
     created_at: datetime = Field(
         ..., description="Timestamp when the ticket was created"

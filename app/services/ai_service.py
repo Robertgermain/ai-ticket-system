@@ -1,13 +1,35 @@
+import json
+import logging
+import re
 from openai import OpenAI
 from app.core.config import settings
-import json
-import re
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 # Initialize OpenAI client
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 
 def analyze_ticket(title: str, description: str) -> dict:
+    """
+    Analyze a support ticket using AI and return structured metadata.
+
+    This function:
+    - Sends the ticket to the OpenAI API for classification
+    - Expects a strict JSON response
+    - Cleans and parses the response safely
+    - Falls back to default values on failure
+
+    Args:
+        title (str): Ticket title
+        description (str): Ticket description
+
+    Returns:
+        dict: Structured ticket metadata including summary, category,
+              issue type, sub-issue type, ticket type, and priority
+    """
+
     prompt = f"""
 You are an IT support ticket classification system.
 
@@ -36,18 +58,19 @@ Description: {description}
 
         content = response.choices[0].message.content.strip()
 
-        # 🔥 Remove markdown/code block formatting if present
+        # Remove markdown/code block formatting if present
         content = re.sub(r"^```json|```$", "", content, flags=re.MULTILINE).strip()
 
-        # 🧪 Debug (you can remove later)
-        print("AI RAW OUTPUT:", content)
+        logger.info("AI RAW OUTPUT: %s", content)
 
-        return json.loads(content)
+        parsed = json.loads(content)
+
+        return parsed
 
     except Exception as e:
-        print("❌ AI ERROR:", e)
+        logger.error("AI ERROR: %s", e)
 
-        # Fallback response so your app doesn't break
+        # Fallback response to prevent system failure
         return {
             "summary": None,
             "category": None,

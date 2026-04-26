@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def _get_ticket(db: Session, ticket_id: int):
+    """Retrieve a non-deleted ticket by ID."""
     return (
         db.query(TicketModel)
         .filter(
@@ -22,6 +23,7 @@ def _get_ticket(db: Session, ticket_id: int):
 
 
 def _check_ticket_access(ticket: TicketModel, user: UserModel):
+    """Ensure user has access to the ticket (owner or admin)."""
     if user.role != "admin" and ticket.owner_id != user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -30,7 +32,12 @@ def _check_ticket_access(ticket: TicketModel, user: UserModel):
 
 
 def _sanitize_ai_output(ai_data: dict) -> dict:
-    """Ensure AI output is safe and valid before writing to DB"""
+    """
+    Validate and normalize AI-generated ticket metadata.
+
+    Ensures only allowed values are persisted and applies safe defaults
+    when the AI output is invalid or missing fields.
+    """
 
     allowed_priorities = {"low", "medium", "high"}
     allowed_status = {"open", "in_progress", "closed"}
@@ -44,7 +51,7 @@ def _sanitize_ai_output(ai_data: dict) -> dict:
         "other",
     }
 
-    sanitized = {
+    return {
         "summary": ai_data.get("summary"),
         "priority": (
             ai_data.get("priority")
@@ -68,8 +75,6 @@ def _sanitize_ai_output(ai_data: dict) -> dict:
         ),
     }
 
-    return sanitized
-
 
 def get_tickets(
     db: Session,
@@ -79,8 +84,16 @@ def get_tickets(
     status: str | None = None,
     priority: str | None = None,
 ):
+    """
+    Retrieve tickets with optional filtering and pagination.
+
+    - Admins can view all tickets
+    - Regular users can only view their own tickets
+    """
+
     query = db.query(TicketModel).filter(TicketModel.is_deleted == False)
 
+    # Enforce ownership for non-admin users
     if user.role != "admin":
         query = query.filter(TicketModel.owner_id == user.id)
 
@@ -96,6 +109,8 @@ def get_tickets(
 
 
 def get_ticket_by_id(db: Session, ticket_id: int, user: UserModel):
+    """Retrieve a single ticket with access control."""
+
     ticket = _get_ticket(db, ticket_id)
 
     if not ticket:
@@ -109,6 +124,13 @@ def get_ticket_by_id(db: Session, ticket_id: int, user: UserModel):
 
 
 def create_ticket(db: Session, ticket: TicketCreate, user: UserModel):
+    """
+    Create a new ticket and enrich it with AI-generated metadata.
+
+    If AI processing fails, safe defaults are applied to ensure
+    the system remains stable.
+    """
+
     new_ticket = TicketModel(
         title=ticket.title,
         description=ticket.description,
@@ -117,11 +139,9 @@ def create_ticket(db: Session, ticket: TicketCreate, user: UserModel):
 
     try:
         ai_data = analyze_ticket(ticket.title, ticket.description)
-
         logger.info("AI RAW OUTPUT: %s", ai_data)
 
         ai_data = _sanitize_ai_output(ai_data)
-
         logger.info("AI SANITIZED OUTPUT: %s", ai_data)
 
         for key, value in ai_data.items():
@@ -130,7 +150,7 @@ def create_ticket(db: Session, ticket: TicketCreate, user: UserModel):
     except Exception as e:
         logger.error("AI ERROR: %s", e)
 
-        # Safe fallback defaults
+        # Fallback defaults to maintain system reliability
         new_ticket.priority = "medium"
         new_ticket.status = "open"
         new_ticket.category = "other"
@@ -148,6 +168,10 @@ def update_ticket_user(
     updated_ticket: TicketUserUpdate,
     user: UserModel,
 ):
+    """
+    Allow users to update their own ticket content (title/description only).
+    """
+
     ticket = _get_ticket(db, ticket_id)
 
     if not ticket:
@@ -174,6 +198,11 @@ def update_ticket(
     updated_ticket: TicketUpdate,
     user: UserModel,
 ):
+    """
+    Allow admins to fully update ticket fields including status,
+    priority, and classification.
+    """
+
     if user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -199,6 +228,12 @@ def update_ticket(
 
 
 def delete_ticket(db: Session, ticket_id: int, user: UserModel):
+    """
+    Soft delete a ticket.
+
+    The ticket is not removed from the database, but marked as deleted.
+    """
+
     ticket = _get_ticket(db, ticket_id)
 
     if not ticket:
