@@ -152,16 +152,6 @@ def create_ticket(db: Session, ticket: TicketCreate, user: UserModel):
         category = new_ticket.category or "other"
         priority = new_ticket.priority or "medium"
 
-        # Assign technician AFTER AI classification
-        assigned_tech = assign_technician(
-            db,
-            category,
-            priority,
-        )
-
-        if assigned_tech:
-            new_ticket.assigned_technician_id = assigned_tech.id
-
     except Exception as e:
         logger.error("AI ERROR: %s", e)
 
@@ -171,18 +161,39 @@ def create_ticket(db: Session, ticket: TicketCreate, user: UserModel):
         new_ticket.category = "other"
         new_ticket.ticket_type = "incident"
 
-        assigned_tech = assign_technician(
-            db,
-            new_ticket.category,
-            new_ticket.priority,
+        category = new_ticket.category
+        priority = new_ticket.priority
+
+    # Assign technician AFTER AI (or fallback)
+    assigned_tech = assign_technician(
+        db,
+        category,
+        priority,
+    )
+
+    if assigned_tech:
+        new_ticket.assigned_technician_id = assigned_tech.id
+
+        # Increment technician load
+        assigned_tech.current_ticket_count += 1
+        db.add(assigned_tech)
+
+        logger.info(
+            "ASSIGNMENT: Ticket assigned to Tech %s | New Load: %s",
+            assigned_tech.id,
+            assigned_tech.current_ticket_count,
         )
 
-        if assigned_tech:
-            new_ticket.assigned_technician_id = assigned_tech.id
-
+    # Persist ticket
     db.add(new_ticket)
     db.commit()
+
+    # Refresh both objects to reflect DB state
     db.refresh(new_ticket)
+
+    if assigned_tech:
+        db.refresh(assigned_tech)
+
     return new_ticket
 
 
@@ -241,10 +252,30 @@ def update_ticket(
             detail="Ticket not found",
         )
 
+    # Capture previous state BEFORE update
+    previous_status = ticket.status
+
     update_data = updated_ticket.model_dump(exclude_unset=True)
 
     for key, value in update_data.items():
         setattr(ticket, key, value)
+
+    # Handle lifecycle: decrement load when ticket is closed
+    if (
+        previous_status != "closed"
+        and ticket.status == "closed"
+        and ticket.assigned_technician
+    ):
+        tech = ticket.assigned_technician
+        tech.current_ticket_count = max(0, tech.current_ticket_count - 1)
+        db.add(tech)
+
+        logger.info(
+            "LOAD UPDATE: Ticket %s closed | Tech %s new load: %s",
+            ticket.id,
+            tech.id,
+            tech.current_ticket_count,
+        )
 
     db.commit()
     db.refresh(ticket)
