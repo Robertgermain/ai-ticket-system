@@ -9,17 +9,19 @@ class TicketModel(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    title = Column(String, nullable=False, index=True)
-    description = Column(String, nullable=False)
+    title = Column(String(100), nullable=False, index=True)
+    description = Column(String(1000), nullable=False)
 
-    status = Column(String, default="open", nullable=False)
-    priority = Column(String, nullable=False, default="low")
+    summary = Column(String(255), nullable=True)
 
-    category = Column(String, nullable=True)
-    issue_type = Column(String, nullable=True)
-    sub_issue_type = Column(String, nullable=True)
+    status = Column(String(20), default="open", nullable=False, index=True)
+    priority = Column(String(20), nullable=False, default="medium", index=True)
 
-    ticket_type = Column(String, nullable=True)
+    category = Column(String(50), nullable=True, index=True)
+    issue_type = Column(String(50), nullable=True)
+    sub_issue_type = Column(String(50), nullable=True)
+
+    ticket_type = Column(String(20), nullable=True)
 
     created_at = Column(
         DateTime(timezone=True),
@@ -38,3 +40,6 @@ class TicketModel(Base):
 
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     owner = relationship("UserModel", back_populates="tickets")
+
+    def __repr__(self):
+        return f"<Ticket id={self.id} title={self.title} status={self.status}>"

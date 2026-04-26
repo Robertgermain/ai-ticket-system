@@ -1,25 +1,34 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordRequestForm
+
 from app.schemas.user import UserCreate, UserResponse, TokenResponse
 from app.services import user_service
 from app.db.deps import get_db
 from app.core.security import verify_password, create_access_token
-from fastapi.security import OAuth2PasswordRequestForm
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter(
+    prefix="/auth",
+    tags=["Auth"],
+)
 
 
 @router.post(
     "/register",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Register a new user",
+    description="Creates a new user account with email, password, and basic profile information.",
 )
-def register(user: UserCreate, db: Session = Depends(get_db)):
+def register(
+    user: UserCreate,
+    db: Session = Depends(get_db),
+):
     existing_user = user_service.get_user_by_email(db, user.email)
 
     if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Email already registered",
         )
 
@@ -37,6 +46,11 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     "/login",
     response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
+    summary="Authenticate user and return access token",
+    description=(
+        "Authenticates a user using email and password. "
+        "Returns a JWT access token for authorized API access."
+    ),
 )
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -60,6 +74,7 @@ def login(
     token = create_access_token(
         {
             "sub": str(db_user.id),
+            "email": db_user.email,
             "role": db_user.role,
         }
     )

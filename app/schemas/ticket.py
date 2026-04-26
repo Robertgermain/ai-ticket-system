@@ -3,59 +3,153 @@ from typing import Optional, Literal
 from datetime import datetime
 
 
-# 🔹 Shared base
+class TicketCreate(BaseModel):
+    title: str = Field(
+        ...,
+        min_length=3,
+        max_length=100,
+        description="Short title summarizing the issue",
+    )
+    description: str = Field(
+        ...,
+        min_length=5,
+        description="Detailed description of the issue provided by the user",
+    )
+
+
+class TicketUserUpdate(BaseModel):
+    title: Optional[str] = Field(
+        default=None,
+        min_length=3,
+        max_length=100,
+        description="Updated ticket title (user-editable)",
+    )
+    description: Optional[str] = Field(
+        default=None,
+        min_length=5,
+        description="Updated ticket description (user-editable)",
+    )
+
+
 class TicketBase(BaseModel):
-    title: str = Field(..., min_length=3, max_length=100)
-    description: str = Field(..., min_length=5)
+    priority: Literal["low", "medium", "high"] = Field(
+        default="medium",
+        description="Priority level of the ticket",
+    )
+    status: Literal["open", "in_progress", "closed"] = Field(
+        default="open",
+        description="Current status of the ticket",
+    )
 
-    priority: Literal["low", "medium", "high"] = "medium"
-    status: Literal["open", "in_progress", "closed"] = "open"
+    category: Optional[str] = Field(
+        default=None,
+        max_length=50,
+        description="High-level category (e.g., hardware, software, network)",
+    )
+    issue_type: Optional[str] = Field(
+        default=None,
+        max_length=50,
+        description="Specific issue classification (e.g., login_issue, device_failure)",
+    )
+    sub_issue_type: Optional[str] = Field(
+        default=None,
+        max_length=50,
+        description="More granular classification of the issue",
+    )
 
-    category: Optional[str] = None
-    issue_type: Optional[str] = None
-    sub_issue_type: Optional[str] = None
-
-    ticket_type: Optional[Literal["incident", "request", "alert"]] = None
-
-
-class TicketCreate(TicketBase):
-    pass
+    ticket_type: Optional[Literal["incident", "request", "alert"]] = Field(
+        default=None,
+        description="Type of ticket (incident, request, or alert)",
+    )
 
 
-# 🔹 Update ticket (partial updates)
 class TicketUpdate(BaseModel):
-    title: Optional[str] = Field(default=None, min_length=3, max_length=100)
-    description: Optional[str] = Field(default=None, min_length=5)
+    title: Optional[str] = Field(
+        default=None,
+        min_length=3,
+        max_length=100,
+        description="Updated title of the ticket",
+    )
+    description: Optional[str] = Field(
+        default=None,
+        min_length=5,
+        description="Updated description of the issue",
+    )
 
-    priority: Optional[Literal["low", "medium", "high"]] = None
-    status: Optional[Literal["open", "in_progress", "closed"]] = None
+    priority: Optional[Literal["low", "medium", "high"]] = Field(
+        default=None,
+        description="Updated priority level",
+    )
+    status: Optional[Literal["open", "in_progress", "closed"]] = Field(
+        default=None,
+        description="Updated ticket status",
+    )
 
-    category: Optional[str] = None
-    issue_type: Optional[str] = None
-    sub_issue_type: Optional[str] = None
+    category: Optional[str] = Field(
+        default=None,
+        max_length=50,
+        description="Updated category",
+    )
+    issue_type: Optional[str] = Field(
+        default=None,
+        max_length=50,
+        description="Updated issue type",
+    )
+    sub_issue_type: Optional[str] = Field(
+        default=None,
+        max_length=50,
+        description="Updated sub-issue classification",
+    )
 
-    ticket_type: Optional[Literal["incident", "request", "alert"]] = None
+    ticket_type: Optional[Literal["incident", "request", "alert"]] = Field(
+        default=None,
+        description="Updated ticket type",
+    )
 
 
-# 🔹 API response
 class Ticket(BaseModel):
-    id: int
-    title: str
-    description: str
+    id: int = Field(..., description="Unique ticket ID")
+    title: str = Field(..., description="Ticket title")
+    description: str = Field(..., description="Ticket description")
 
-    status: str
-    priority: str
+    summary: Optional[str] = Field(
+        None,
+        description="AI-generated summary of the ticket",
+    )
 
-    category: Optional[str]
-    issue_type: Optional[str]
-    sub_issue_type: Optional[str]
+    status: Literal["open", "in_progress", "closed"] = Field(
+        ..., description="Current ticket status"
+    )
+    priority: Literal["low", "medium", "high"] = Field(
+        ..., description="Priority level"
+    )
 
-    ticket_type: Optional[str]
+    category: Optional[str] = Field(
+        None,
+        description="Ticket category",
+    )
+    issue_type: Optional[str] = Field(
+        None,
+        description="Issue classification",
+    )
+    sub_issue_type: Optional[str] = Field(
+        None,
+        description="Detailed issue classification",
+    )
 
-    owner_id: int
-    created_at: datetime
-    updated_at: datetime
-    is_deleted: bool
+    ticket_type: Optional[Literal["incident", "request", "alert"]] = Field(
+        None,
+        description="Type of ticket",
+    )
+
+    owner_id: int = Field(..., description="ID of the user who owns the ticket")
+    created_at: datetime = Field(
+        ..., description="Timestamp when the ticket was created"
+    )
+    updated_at: datetime = Field(
+        ..., description="Timestamp when the ticket was last updated"
+    )
+    is_deleted: bool = Field(..., description="Soft delete flag")
 
     class Config:
         from_attributes = True
