@@ -44,7 +44,7 @@ class TechnicianModel(Base):
         default="junior",
     )  # junior / mid / senior
 
-    # ✅ Updated: use ARRAY instead of string
+    # ARRAY instead of string
     skills = Column(
         ARRAY(String),
         nullable=True,

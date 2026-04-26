@@ -155,6 +155,11 @@ class Ticket(BaseModel):
 
     # Ownership + audit fields
     owner_id: int = Field(..., description="ID of the user who owns the ticket")
+
+    assigned_technician_id: Optional[int] = Field(
+        None, description="ID of the assigned technician"
+    )
+
     created_at: datetime = Field(
         ..., description="Timestamp when the ticket was created"
     )

@@ -144,8 +144,23 @@ def create_ticket(db: Session, ticket: TicketCreate, user: UserModel):
         ai_data = _sanitize_ai_output(ai_data)
         logger.info("AI SANITIZED OUTPUT: %s", ai_data)
 
+        # Apply AI fields dynamically
         for key, value in ai_data.items():
             setattr(new_ticket, key, value)
+
+        # Ensure safe values before assignment
+        category = new_ticket.category or "other"
+        priority = new_ticket.priority or "medium"
+
+        # Assign technician AFTER AI classification
+        assigned_tech = assign_technician(
+            db,
+            category,
+            priority,
+        )
+
+        if assigned_tech:
+            new_ticket.assigned_technician_id = assigned_tech.id
 
     except Exception as e:
         logger.error("AI ERROR: %s", e)
@@ -155,6 +170,15 @@ def create_ticket(db: Session, ticket: TicketCreate, user: UserModel):
         new_ticket.status = "open"
         new_ticket.category = "other"
         new_ticket.ticket_type = "incident"
+
+        assigned_tech = assign_technician(
+            db,
+            new_ticket.category,
+            new_ticket.priority,
+        )
+
+        if assigned_tech:
+            new_ticket.assigned_technician_id = assigned_tech.id
 
     db.add(new_ticket)
     db.commit()
@@ -249,3 +273,86 @@ def delete_ticket(db: Session, ticket_id: int, user: UserModel):
     db.commit()
     db.refresh(ticket)
     return ticket
+
+
+from app.models.technician import TechnicianModel
+from app.models.ticket import TicketModel
+
+
+def assign_technician(db, category: str, priority: str):
+    """
+    Assigns technician based on:
+    - Department match (with fallback)
+    - Skill level vs required priority (with fallback)
+    - Capacity
+    - Load balancing
+    """
+
+    if not category:
+        return None
+
+    category = category.lower()
+
+    # Priority → required level
+    priority_map = {"low": 1, "medium": 2, "high": 3}
+
+    required_level = priority_map.get(priority, 2)
+
+    # Technician levels
+    skill_map = {"junior": 1, "mid": 2, "senior": 3}
+
+    # Ordered fallback levels
+    fallback_levels = {
+        3: [3, 2, 1],  # high
+        2: [2, 1],  # medium
+        1: [1],  # low
+    }
+
+    technicians = (
+        db.query(TechnicianModel).filter(TechnicianModel.is_active == True).all()
+    )
+
+    def find_best_tech(tech_list, level_group):
+        eligible = []
+
+        for tech in tech_list:
+            tech_level = skill_map.get((tech.skill_level or "").lower(), 1)
+
+            # Skip if below required level
+            if tech_level not in level_group:
+                continue
+
+            current_load = len([t for t in tech.tickets if t.status != "closed"])
+
+            if current_load < tech.max_ticket_capacity:
+                eligible.append((tech, current_load))
+
+        if not eligible:
+            return None
+
+        return min(eligible, key=lambda x: x[1])[0]
+
+    fallback_levels = {
+        3: [[3]],
+        2: [[2, 3], [3]],
+        1: [[1, 2, 3]],
+    }
+
+    # Try department match FIRST
+    dept_techs = [
+        t for t in technicians if t.department and t.department.lower() == category
+    ]
+
+    # Try fallback levels within department
+    for level_group in fallback_levels.get(required_level, [[2, 3]]):
+        best = find_best_tech(dept_techs, level_group)
+        if best:
+            return best
+
+    # Fallback to ANY department
+    for level_group in fallback_levels.get(required_level, [[2, 3]]):
+        best = find_best_tech(technicians, level_group)
+        if best:
+            return best
+
+    return None
