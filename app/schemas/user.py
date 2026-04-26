@@ -29,6 +29,7 @@ class UserCreate(UserBase):
         min_length=8,
         max_length=128,
         description="User password (min 8 characters)",
+        example="string",
     )
 
 

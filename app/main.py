@@ -4,6 +4,7 @@ import logging
 from app.api.routes import tickets, auth, users
 from app.db.database import engine, Base  # Required for model imports
 from app.models import ticket, user  # Ensures models are registered with SQLAlchemy
+from app.api.routes import technicians
 
 # Configure global logging for the application
 logging.basicConfig(
@@ -30,3 +31,4 @@ async def root():
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(tickets.router)
+app.include_router(technicians.router)

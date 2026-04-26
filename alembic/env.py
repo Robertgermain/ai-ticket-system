@@ -6,7 +6,7 @@ from alembic import context
 from dotenv import load_dotenv
 
 from app.db.database import Base
-from app.models import user, ticket
+import app.models
 
 # Load environment variables
 load_dotenv()

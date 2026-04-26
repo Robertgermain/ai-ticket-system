@@ -59,5 +59,18 @@ class TicketModel(Base):
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     owner = relationship("UserModel", back_populates="tickets")
 
+    # Technician assignment
+    assigned_technician_id = Column(
+        Integer,
+        ForeignKey("technicians.id"),
+        nullable=True,
+        index=True,
+    )
+
+    assigned_technician = relationship(
+        "TechnicianModel",
+        back_populates="tickets",
+    )
+
     def __repr__(self):
         return f"<Ticket id={self.id} title={self.title} status={self.status}>"
