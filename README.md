@@ -17,6 +17,15 @@ When a ticket is created:
 
 ---
 
+## 🌐 Live Demo
+
+> (Add this after Render deployment)
+
+- API Base URL: `https://your-app.onrender.com`
+- Interactive Docs: `https://your-app.onrender.com/docs`
+
+---
+
 ## 🧠 Key Features
 
 ### 🔹 AI Ticket Classification
@@ -77,10 +86,22 @@ Provides system-level insights:
 - Alembic (migrations)
 - JWT Authentication
 - OpenAI API
+- Docker
 
 ---
 
-## 🛠️ Setup
+## 🐳 Docker Support
+
+Build and run the application using Docker:
+
+```bash
+docker build -t ai-ticket-system .
+docker run --env-file .env -p 8000:8000 ai-ticket-system
+```
+
+---
+
+## 🛠️ Local Setup
 
 ```bash
 git clone https://github.com/yourusername/ai-ticket-system.git
@@ -117,6 +138,7 @@ uvicorn app.main:app --reload
 - Secure authentication & authorization
 - Intelligent routing algorithms
 - Load balancing logic
+- Containerization with Docker
 - Real-world API architecture
 
 ---
