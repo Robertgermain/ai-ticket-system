@@ -19,10 +19,11 @@ When a ticket is created:
 
 ## 🌐 Live Demo
 
-> (Add this after Render deployment)
+API Base URL:  
+https://ai-ticket-system-n7ot.onrender.com
 
-- API Base URL: `https://your-app.onrender.com`
-- Interactive Docs: `https://your-app.onrender.com/docs`
+Interactive Swagger Docs:  
+https://ai-ticket-system-n7ot.onrender.com/docs
 
 ---
 
@@ -66,7 +67,7 @@ When a ticket is created:
 
 #### Secure Password Management
 - Passwords hashed using bcrypt
-- Authenticated password change endpoint
+- Password reset functionality implemented
 
 ---
 
@@ -81,12 +82,13 @@ Provides system-level insights:
 ## 🏗️ Tech Stack
 
 - FastAPI
-- PostgreSQL
+- PostgreSQL (Render)
 - SQLAlchemy
-- Alembic (migrations)
+- Alembic (database migrations)
 - JWT Authentication
 - OpenAI API
 - Docker
+- Render (Deployment)
 
 ---
 
@@ -98,6 +100,18 @@ Build and run the application using Docker:
 docker build -t ai-ticket-system .
 docker run --env-file .env -p 8000:8000 ai-ticket-system
 ```
+
+---
+
+## ☁️ Deployment
+
+This application is fully containerized and deployed on Render.
+
+Deployment includes:
+- Dockerized FastAPI backend
+- Managed PostgreSQL database
+- Environment variable configuration
+- Automated database migrations using Alembic
 
 ---
 
@@ -127,31 +141,36 @@ uvicorn app.main:app --reload
 4. Create a ticket → AI auto-classifies + assigns technician
 5. View tickets
 6. (Admin only) Access `/metrics`
-7. Change password via `/auth/change-password`
+7. Reset password via `/auth/reset-password`
 
 ---
 
 ## 📈 What This Project Demonstrates
 
-- Backend system design
+- Production-style backend architecture
 - AI-powered automation workflows
 - Secure authentication & authorization
 - Intelligent routing algorithms
 - Load balancing logic
-- Containerization with Docker
-- Real-world API architecture
+- RESTful API design
+- Database schema management with migrations
+- Containerization using Docker
+- Cloud deployment (Render)
 
 ---
 
 ## 🚧 Future Improvements
 
-- Email-based password reset flow
-- Notification system (email / Slack)
+- Email-based notifications (ticket updates, password reset)
+- Slack / Teams integration
 - Frontend dashboard (React)
 - Advanced analytics & reporting
+- Role-based UI
 
 ---
 
 ## 📌 Summary
 
-This project is a production-style backend system showcasing how AI can be integrated into operational workflows to automate decision-making, improve efficiency, and reduce manual effort.
+This project demonstrates how AI can be integrated into backend systems to automate ticket classification, optimize workload distribution, and streamline operational workflows.
+
+It reflects real-world backend engineering practices including API design, authentication, database management, containerization, and cloud deployment.
