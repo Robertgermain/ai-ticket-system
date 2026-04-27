@@ -17,13 +17,62 @@ When a ticket is created:
 
 ---
 
+## 🧱 System Architecture
+
+The system is designed as a modular backend API with clear separation of concerns:
+
+- **API Layer (FastAPI)** — Handles request routing and validation  
+- **Service Layer** — Business logic for ticket processing and assignment  
+- **AI Layer (OpenAI)** — Extracts structured data from ticket content  
+- **Database Layer (PostgreSQL + SQLAlchemy)** — Stores users, tickets, and assignments  
+- **Auth Layer (JWT)** — Secure authentication and role-based access  
+
+Workflow:
+
+1. Incoming request hits FastAPI endpoint  
+2. Ticket data is processed by the AI service  
+3. Structured metadata is generated  
+4. Assignment logic selects the best technician  
+5. Data is stored and returned to the client  
+
+---
+
 ## 🌐 Live Demo
 
 API Base URL:  
-https://ai-ticket-system-n7ot.onrender.com
+https://ai-ticket-system-n7ot.onrender.com  
 
 Interactive Swagger Docs:  
-https://ai-ticket-system-n7ot.onrender.com/docs
+https://ai-ticket-system-n7ot.onrender.com/docs  
+
+---
+
+## ⚡ Example API Usage
+
+### Create a Ticket
+
+**Request**
+```json
+POST /tickets
+
+{
+  "title": "User cannot connect to VPN",
+  "description": "Remote employee unable to access company network"
+}
+```
+
+**Response**
+```json
+{
+  "summary": "User unable to connect to VPN",
+  "priority": "High",
+  "category": "Network",
+  "issue_type": "VPN Connectivity",
+  "assigned_to": "Senior Network Technician"
+}
+```
+
+This demonstrates how the system uses AI to transform unstructured input into structured, actionable data and automatically assigns the most appropriate technician.
 
 ---
 
@@ -171,6 +220,11 @@ uvicorn app.main:app --reload
 
 ## 📌 Summary
 
-This project demonstrates how AI can be integrated into backend systems to automate ticket classification, optimize workload distribution, and streamline operational workflows.
+This project simulates a production-style backend system for IT ticket automation.
 
-It reflects real-world backend engineering practices including API design, authentication, database management, containerization, and cloud deployment.
+It demonstrates how AI can be integrated into real-world workflows to:
+- Reduce manual triage effort
+- Improve response time
+- Optimize technician workload distribution
+
+The system is fully deployed, containerized, and accessible via a live API, reflecting real-world backend engineering practices.
