@@ -96,3 +96,10 @@ class TokenResponse(BaseModel):
         default=None,
         description="Token expiration time in seconds",
     )
+
+
+class ChangePasswordRequest(BaseModel):
+    """Schema for allowing a user to reset their password."""
+
+    current_password: str
+    new_password: str
