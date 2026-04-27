@@ -22,7 +22,7 @@ app = FastAPI(
 
 
 @app.get("/health", tags=["Health Check"])
-async def root():
+async def health():
     """
     Health check endpoint to verify the API is running.
     """
