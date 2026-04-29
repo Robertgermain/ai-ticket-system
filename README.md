@@ -56,8 +56,8 @@ https://ai-ticket-system-n7ot.onrender.com/docs
 POST /tickets
 
 {
-  "title": "User cannot connect to VPN",
-  "description": "Remote employee unable to access company network"
+  "title": "Account hacked",
+  "description": "My account has been hacked"
 }
 ```
 
