@@ -40,7 +40,7 @@ Workflow:
 ## 🌐 Live Demo
 
 API Base URL:  
-https://ai-ticket-system-n7ot.onrender.com  
+https://ai-ticket-system-n7ot.onrender.com/health
 
 Interactive Swagger Docs:  
 https://ai-ticket-system-n7ot.onrender.com/docs  
