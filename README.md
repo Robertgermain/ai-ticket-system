@@ -64,15 +64,35 @@ POST /tickets
 **Response**
 ```json
 {
-  "summary": "User unable to connect to VPN",
-  "priority": "High",
-  "category": "Network",
-  "issue_type": "VPN Connectivity",
-  "assigned_to": "Senior Network Technician"
+  "id": 2,
+  "title": "Account hacked",
+  "description": "My account has been hacked",
+  "summary": "Account compromised",
+  "status": "open",
+  "priority": "high",
+  "category": "security",
+  "issue_type": "account_hack",
+  "sub_issue_type": "account_compromise",
+  "ticket_type": "incident",
+  "owner_id": 1,
+  "assigned_technician_id": 10,
+  "created_at": "2026-04-29T17:45:02.041378Z",
+  "updated_at": "2026-04-29T17:45:02.041378Z",
+  "is_deleted": false
 }
 ```
 
 This demonstrates how the system uses AI to transform unstructured input into structured, actionable data and automatically assigns the most appropriate technician.
+
+The `assigned_technician_id` field represents the technician selected by the system’s assignment logic.
+
+Technician assignment is based on:
+- Ticket category (e.g., network, security, application)
+- Issue type and sub-issue type
+- Priority level
+- Technician role, skill set, and availability
+
+If no suitable technician is found, this field will return `null`.
 
 ---
 
